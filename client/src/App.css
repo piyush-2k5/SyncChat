@@ -6,10 +6,7 @@ body {
   font-family: 'DM Sans', sans-serif;
   background: #0f0f13;
   color: #f0f0f0;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin: 0;
 }
 
 /* ─── JOIN SCREEN ─── */
