@@ -43,6 +43,7 @@ body {
 .chat-app {
   display: flex; flex-direction: column;
   width: 480px; height: 680px;
+  margin: auto;
   background: #18181f; border: 1px solid #2a2a35;
   border-radius: 20px; overflow: hidden;
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
