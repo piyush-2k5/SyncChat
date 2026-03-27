@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3001/api";
+const BASE_URL = "https://syncchat-1-riku.onrender.com/api";
  
 // GET /api/messages — fetch all messages
 export async function fetchMessages() {
