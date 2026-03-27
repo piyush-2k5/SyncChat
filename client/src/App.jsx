@@ -134,7 +134,6 @@ useEffect(() => {
         <span className="header-logo">💬</span>
         <h2>LiveChat</h2>
         <div className="header-right">
-          <span className="api-badge db-badge">🍃 MongoDB</span>
           <div className="online-badge">
             <span className="dot"></span> Online
           </div>
