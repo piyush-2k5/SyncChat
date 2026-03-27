@@ -8,7 +8,7 @@ A full-stack real-time chat application built using React, Node.js, Express, Mon
 
 | | Link |
 |---|---|
-| **Frontend** | https://your-app.vercel.app |
+| **Frontend** | https://sync-chat-nu.vercel.app |
 | **Backend API** | [https://your-api.onrender.com](https://syncchat-1-riku.onrender.com) |
 
 ---
