@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { fetchMessages } from "./api";
 import "./App.css";
 import socket from "./socket";
 
@@ -9,31 +8,20 @@ function App() {
   const [username, setUsername] = useState("");
   const [isJoined, setIsJoined] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-
-  // error state
   const [sendError, setSendError] = useState(null);
 
   const messagesEndRef = useRef(null);
 
-  // socket connect
-useEffect(() => {
-  socket.connect();
-
-  return () => {
-    socket.off();       // remove all listeners
-    socket.disconnect();
-  };
-  }, []);
-
-  // socket events
   useEffect(() => {
-    // history
     socket.on("messageHistory", (history) => {
-      setMessages(history);
+      setMessages((prev) => {
+        if (prev.length > 0) return prev;
+        return history;
+      });
       setIsLoading(false);
     });
 
-    // new message
+    // receive message
     socket.on("receiveMessage", (messageData) => {
       setMessages((prev) => {
         const exists = prev.some((m) => m._id === messageData._id);
@@ -42,13 +30,12 @@ useEffect(() => {
       });
     });
 
-    // error event
+    // error handling
     socket.on("messageFailed", ({ error }) => {
       setSendError(error);
       setTimeout(() => setSendError(null), 4000);
     });
 
-    // cleanup
     return () => {
       socket.off("messageHistory");
       socket.off("receiveMessage");
@@ -56,38 +43,37 @@ useEffect(() => {
     };
   }, []);
 
-  // api fallback
+  //  CLEANUP 
   useEffect(() => {
-    const load = async () => {
-      const data = await fetchMessages();
-      if (data && data.length > 0) setMessages(data);
-      setIsLoading(false);
+    return () => {
+      socket.disconnect();
     };
-    const timer = setTimeout(load, 500);
-    return () => clearTimeout(timer);
   }, []);
 
-  // auto scroll
+  //  AUTO SCROLL 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // join user
+  //  JOIN 
   const handleJoin = () => {
     if (inputText.trim() === "") return;
-    setUsername(inputText.trim());
+
+    const name = inputText.trim();
+    setUsername(name);
     setInputText("");
     setIsJoined(true);
+
+    socket.connect(); // 🔥 connect AFTER join
   };
 
-  // send message
+  //  SEND MESSAGE 
   const handleSendMessage = () => {
-    if (inputText.trim() === "") return;
+    if (inputText.trim() === "" || !username) return;
 
     socket.emit("sendMessage", {
       text: inputText.trim(),
       sender: username,
-      socketId: socket.id,
       time: new Date().toLocaleTimeString([], {
         hour: "2-digit",
         minute: "2-digit",
@@ -97,7 +83,7 @@ useEffect(() => {
     setInputText("");
   };
 
-  // key handler
+  //  ENTER KEY 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       if (!isJoined) handleJoin();
@@ -105,7 +91,7 @@ useEffect(() => {
     }
   };
 
-  // join screen
+  //  JOIN SCREEN 
   if (!isJoined) {
     return (
       <div className="join-screen">
@@ -127,7 +113,7 @@ useEffect(() => {
     );
   }
 
-  // chat ui
+  //  CHAT UI 
   return (
     <div className="chat-app">
       <header className="chat-header">
@@ -156,7 +142,7 @@ useEffect(() => {
         )}
 
         {messages.map((msg, index) => {
-          const isMe = msg.socketId === socket.id;
+          const isMe = msg.sender === username; // 🔥 FIXED
 
           return (
             <div
@@ -164,9 +150,15 @@ useEffect(() => {
               className={`message-wrapper ${isMe ? "me" : "other"}`}
             >
               {!isMe && <span className="sender-name">{msg.sender}</span>}
-              <div className={`message-bubble ${isMe ? "bubble-me" : "bubble-other"}`}>
+
+              <div
+                className={`message-bubble ${
+                  isMe ? "bubble-me" : "bubble-other"
+                }`}
+              >
                 {msg.text}
               </div>
+
               <span className="message-time">{msg.time}</span>
             </div>
           );
@@ -183,7 +175,12 @@ useEffect(() => {
           onChange={(e) => setInputText(e.target.value)}
           onKeyDown={handleKeyDown}
         />
-        <button onClick={handleSendMessage}>Send ↑</button>
+        <button
+          disabled={!inputText.trim()}
+          onClick={handleSendMessage}
+        >
+          Send ↑
+        </button>
       </div>
     </div>
   );
