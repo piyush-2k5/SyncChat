@@ -1,4 +1,4 @@
-const BASE_URL = "https://syncchat-1-riku.onrender.com";
+const BASE_URL = "https://syncchat-1-riku.onrender.com/api";
 
 // AUTH
 
