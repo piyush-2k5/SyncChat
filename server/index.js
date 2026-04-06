@@ -7,10 +7,10 @@ const mongoose = require("mongoose");
 const app = require("./app");
 const initSocket = require("./socket");
 
-// ================= SERVER =================
+// SERVER
 const server = http.createServer(app);
 
-// ================= SOCKET =================
+// SOCKET
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -20,27 +20,37 @@ const io = new Server(server, {
 
 initSocket(io);
 
-// ================= CONFIG =================
-const PORT = process.env.PORT;
+// CONFIG
+const PORT = process.env.PORT || 3001;
 const MONGO_URI = process.env.MONGO_URI;
 
-console.log("PORT:", PORT);
+// START
+async function startServer() {
+  try {
+    console.log("Connecting DB...");
 
-// ================= START SERVER =================
-server.listen(PORT, () => {
-  console.log(`🔥 Server running on port ${PORT}`);
-});
+    await mongoose.connect(MONGO_URI);
 
-// ================= CONNECT DB =================
-mongoose.connect(MONGO_URI)
-  .then(() => console.log("✅ DB connected"))
-  .catch((err) => console.error("❌ DB error:", err.message));
+    console.log("DB connected");
 
-// ================= DB EVENTS =================
+    server.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+
+  } catch (error) {
+    console.error("DB error:", error.message);
+    process.exit(1);
+  }
+}
+
+// DB EVENTS
 mongoose.connection.on("disconnected", () => {
   console.warn("⚠️ DB disconnected");
 });
 
 mongoose.connection.on("reconnected", () => {
-  console.log("🔁 DB reconnected");
+  console.log("DB reconnected");
 });
+
+// RUN
+startServer();

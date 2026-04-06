@@ -1,53 +1,65 @@
 // imports
 const Message = require("./models/Message");
+const jwt = require("jsonwebtoken");
 
 function initSocket(io) {
-  io.on("connection", async (socket) => {
-    console.log(`User connected: ${socket.id}`);
 
-    // load history
+  // 🔐 JWT Middleware
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+
+    if (!token) return next(new Error("No token"));
+
     try {
-      const history = await Message
-        .find()
-        .sort({ createdAt: 1 })
-        .limit(50);
-
-      socket.emit("messageHistory", history);
-    } catch (error) {
-      console.error("History error:", error.message);
-      socket.emit("messageHistory", []);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      socket.user = decoded; // attach user
+      next();
+    } catch (err) {
+      return next(new Error("Invalid token"));
     }
+  });
+
+  io.on("connection", async (socket) => {
+    console.log(`User connected: ${socket.user.username}`);
 
     // receive message
     socket.on("sendMessage", async (messageData) => {
+      console.log("MESSAGE RECEIVED:", messageData);
       try {
-        // save message
+        if (!messageData.text?.trim()) return;
         const newMessage = new Message({
           text: messageData.text,
-          sender: messageData.sender,
+          sender: socket.user.username, // SECURE
           socketId: socket.id,
-          time: messageData.time,
+          time: Date.now(),
         });
 
         const saved = await newMessage.save();
-        console.log(`Saved: ${saved.sender}`);
 
-        // broadcast
         io.emit("receiveMessage", saved);
 
       } catch (error) {
         console.error("Save error:", error.message);
 
-        // notify sender
         socket.emit("messageFailed", {
           error: "Message failed",
         });
       }
     });
 
+    // typing indicator
+    socket.on("typing", () => {
+      socket.broadcast.emit("typing", socket.user.username);
+    });
+
+    // stop typing indicator
+    socket.on("stopTyping", () => {
+      socket.broadcast.emit("stopTyping", socket.user.username);
+    });
+
     // disconnect
     socket.on("disconnect", () => {
-      console.log(`User disconnected: ${socket.id}`);
+      console.log(`User disconnected: ${socket.user.username}`);
     });
   });
 }

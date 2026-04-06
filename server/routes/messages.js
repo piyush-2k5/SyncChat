@@ -8,7 +8,7 @@ router.get("/", async (req, res) => {
   try {
     const messages = await Message
       .find()
-      .sort({ createdAt: 1 })
+      .sort({ createdAt: -1 })
       .limit(50);
 
     res.json({

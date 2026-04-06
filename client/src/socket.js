@@ -1,8 +1,13 @@
 import { io } from "socket.io-client";
 
-const socket = io("https://syncchat-1-riku.onrender.com", {
+const socket = io("http://localhost:3001", {
   autoConnect: false,
-  transports: ["websocket"], // prevents polling reconnect spam
+  transports: ["websocket"],
 });
+
+export const connectSocket = (token) => {
+  socket.auth = { token }; // 🔐 send JWT
+  socket.connect();
+};
 
 export default socket;
